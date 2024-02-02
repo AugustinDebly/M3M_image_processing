@@ -1,1 +1,6 @@
-# M3M_image_processing
+# DJI Mavic 3M image processing
+Augustin Debly
+
+## Fundamentals
+
+## DJI Mavic 3M
