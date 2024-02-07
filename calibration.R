@@ -1,8 +1,8 @@
 ##Packages--------------------------------------------------------------------------------------------------------
 library(exiftoolr)
 library(terra)
-system("python -m pip install numpy",intern = T)
-system("python -m pip install opencv-python",intern= T)
+system("python -m pip install numpy")
+system("python -m pip install opencv-python")
 
 ##Path------------------------------------------------------------------------------------------------------------
 #Path of the raw images for each bands
@@ -14,9 +14,11 @@ path_RE = "example_images/example_MS_RE.TIF"
 #Path of directories where images will be stored after each corrections
 path_dir_out_vignetting = "step_1_vignetting"
 path_dir_out_distorsion = "step_2_distorsion"
+path_dir_out_alignment  = "step_3_alignment"
 
 #Path of the python script used for distorsion correction
 path_script_python_distorsion = "distorsion_calibration.py"
+path_script_python_alignment = "alignment_calibration.py"
 
 #Name of the images
 name_image_G = strsplit(path_G,"/")[[1]][length(strsplit(path_G,"/")[[1]])]
@@ -35,6 +37,12 @@ path_distorsion_G = paste(path_dir_out_distorsion,paste(substr(name_image_G,1,nc
 path_distorsion_NIR = paste(path_dir_out_distorsion,paste(substr(name_image_NIR,1,nchar(name_image_NIR)-4),"_distorsion_corrected.TIF",sep = ""),sep = "/")
 path_distorsion_R = paste(path_dir_out_distorsion,paste(substr(name_image_R,1,nchar(name_image_R)-4),"_distorsion_corrected.TIF",sep = ""),sep = "/")
 path_distorsion_RE = paste(path_dir_out_distorsion,paste(substr(name_image_RE,1,nchar(name_image_RE)-4),"_distorsion_corrected.TIF",sep = ""),sep = "/")
+
+#Path of images stored after alignment correction
+path_alignment_G = paste(path_dir_out_alignment,paste(substr(name_image_G,1,nchar(name_image_G)-4),"_alignment_corrected.TIF",sep = ""),sep = "/")
+path_alignment_NIR = paste(path_dir_out_alignment,paste(substr(name_image_NIR,1,nchar(name_image_NIR)-4),"_alignment_corrected.TIF",sep = ""),sep = "/")
+path_alignment_R = paste(path_dir_out_alignment,paste(substr(name_image_R,1,nchar(name_image_R)-4),"_alignment_corrected.TIF",sep = ""),sep = "/")
+path_alignment_RE = paste(path_dir_out_alignment,paste(substr(name_image_RE,1,nchar(name_image_RE)-4),"_alignment_corrected.TIF",sep = ""),sep = "/")
 
 ##Importing exif--------------------------------------------------------------------------------------------------
 if(!(exists("exif_G") && exists("exif_NIR") && exists("exif_R") && exists("exif_RE"))){
@@ -142,6 +150,47 @@ p1_RE = distorsion_info_RE[8]
 p2_RE = distorsion_info_RE[9]
 k3_RE = distorsion_info_RE[10]
 
+alignment_info_G = as.numeric(strsplit(exif_G$CalibratedHMatrix,"[;,]")[[1]])
+alignment_info_NIR = as.numeric(strsplit(exif_NIR$CalibratedHMatrix,"[;,]")[[1]])
+alignment_info_R = as.numeric(strsplit(exif_R$CalibratedHMatrix,"[;,]")[[1]])
+alignment_info_RE = as.numeric(strsplit(exif_RE$CalibratedHMatrix,"[;,]")[[1]])
+M11_G = alignment_info_G[1]
+M12_G = alignment_info_G[2]
+M13_G = alignment_info_G[3]
+M21_G = alignment_info_G[4]
+M22_G = alignment_info_G[5]
+M23_G = alignment_info_G[6]
+M31_G = alignment_info_G[7]
+M32_G = alignment_info_G[8]
+M33_G = alignment_info_G[9]
+M11_NIR = alignment_info_NIR[1]
+M12_NIR = alignment_info_NIR[2]
+M13_NIR = alignment_info_NIR[3]
+M21_NIR = alignment_info_NIR[4]
+M22_NIR = alignment_info_NIR[5]
+M23_NIR = alignment_info_NIR[6]
+M31_NIR = alignment_info_NIR[7]
+M32_NIR = alignment_info_NIR[8]
+M33_NIR = alignment_info_NIR[9]
+M11_R = alignment_info_R[1]
+M12_R = alignment_info_R[2]
+M13_R = alignment_info_R[3]
+M21_R = alignment_info_R[4]
+M22_R = alignment_info_R[5]
+M23_R = alignment_info_R[6]
+M31_R = alignment_info_R[7]
+M32_R = alignment_info_R[8]
+M33_R = alignment_info_R[9]
+M11_RE = alignment_info_RE[1]
+M12_RE = alignment_info_RE[2]
+M13_RE = alignment_info_RE[3]
+M21_RE = alignment_info_RE[4]
+M22_RE = alignment_info_RE[5]
+M23_RE = alignment_info_RE[6]
+M31_RE = alignment_info_RE[7]
+M32_RE = alignment_info_RE[8]
+M33_RE = alignment_info_RE[9]
+
 ##Importing images------------------------------------------------------------------------------------------------
 if(!(exists("raw_rast_G") && exists("raw_rast_NIR") && exists("raw_rast_R") && exists("raw_rast_RE"))){
   raw_rast_G = rast(path_G)
@@ -171,10 +220,17 @@ polynomial_correction_RE <- function(x,y){
 
 #Distorsion
 distorsion_correction_python <- function(path_script_python_distorsion,path_image_in,path_image_out,fx,fy,cx,cy,k1,k2,p1,p2,k3){
-  system(paste("python",path_script_python_distorsion, path_image_in, path_image_out, fx, fy, cx, cy, k1, k2, p1, p2, k3), intern = T)
+  system(paste("python",path_script_python_distorsion, path_image_in, path_image_out, fx, fy, cx, cy, k1, k2, p1, p2, k3))
   image_out_rast = rast(path_image_out)
   image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
   return(image_out_matrix)
+}
+
+#Alignment
+alignment_correction_python <- function(path_script_python_alignment,path_image_in,path_image_out,M11,M12,M13,M21,M22,M23,M31,M32,M33){
+  system(paste("python",path_script_python_alignment, path_image_in, path_image_out, M11 ,M12 ,M13 ,M21 ,M22 ,M23 ,M31 ,M32 ,M33))
+  image_out_rast = rast(path_image_out)
+  image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
 }
 
 ##Vignetting correction-------------------------------------------------------------------------------------------
@@ -182,28 +238,66 @@ x_mat_G = matrix(rep(1:width_G,each=height_G),ncol=width_G)
 y_mat_G = matrix(rep(1:height_G,times=width_G),ncol=width_G)
 matrice_vignetting_G = polynomial_correction_G(x_mat_G,y_mat_G)
 image_corrected_vignetting_G = raw_rast_G*rast(matrice_vignetting_G)
-writeRaster(image_corrected_vignetting_G,path_vignetting_G)
+max_raw_G = max(values(raw_rast_G))
+min_raw_G = min(values(raw_rast_G))
+max_corrected_G = max(values(image_corrected_vignetting_G))
+min_corrected_G = min(values(image_corrected_vignetting_G))
+a_G = (max_raw_G-min_raw_G)/(max_corrected_G-min_corrected_G)
+b_G = min_raw_G - a_G*min_corrected_G
+image_corrected_vignetting_G = a_G * image_corrected_vignetting_G + b_G
+values(image_corrected_vignetting_G) = as.integer(values(image_corrected_vignetting_G))
+writeRaster(image_corrected_vignetting_G,path_vignetting_G,datatype = datatype(raw_rast_G),overwrite=T)
 
 x_mat_NIR = matrix(rep(1:width_NIR,each=height_NIR),ncol=width_NIR)
 y_mat_NIR = matrix(rep(1:height_NIR,times=width_NIR),ncol=width_NIR)
 matrice_vignetting_NIR = polynomial_correction_NIR(x_mat_NIR,y_mat_NIR)
 image_corrected_vignetting_NIR = raw_rast_NIR*rast(matrice_vignetting_NIR)
-writeRaster(image_corrected_vignetting_NIR,path_vignetting_NIR)
+max_raw_NIR = max(values(raw_rast_NIR))
+min_raw_NIR = min(values(raw_rast_NIR))
+max_corrected_NIR = max(values(image_corrected_vignetting_NIR))
+min_corrected_NIR = min(values(image_corrected_vignetting_NIR))
+a_NIR = (max_raw_NIR-min_raw_NIR)/(max_corrected_NIR-min_corrected_NIR)
+b_NIR = min_raw_NIR - a_NIR*min_corrected_NIR
+image_corrected_vignetting_NIR = a_NIR * image_corrected_vignetting_NIR + b_NIR
+values(image_corrected_vignetting_NIR) = as.integer(values(image_corrected_vignetting_NIR))
+writeRaster(image_corrected_vignetting_NIR,path_vignetting_NIR,datatype = datatype(raw_rast_NIR),overwrite=T)
 
 x_mat_R = matrix(rep(1:width_R,each=height_R),ncol=width_R)
 y_mat_R = matrix(rep(1:height_R,times=width_R),ncol=width_R)
 matrice_vignetting_R = polynomial_correction_R(x_mat_R,y_mat_R)
 image_corrected_vignetting_R = raw_rast_R*rast(matrice_vignetting_R)
-writeRaster(image_corrected_vignetting_R,path_vignetting_R)
+max_raw_R = max(values(raw_rast_R))
+min_raw_R = min(values(raw_rast_R))
+max_corrected_R = max(values(image_corrected_vignetting_R))
+min_corrected_R = min(values(image_corrected_vignetting_R))
+a_R = (max_raw_R-min_raw_R)/(max_corrected_R-min_corrected_R)
+b_R = min_raw_R - a_R*min_corrected_R
+image_corrected_vignetting_R = a_R * image_corrected_vignetting_R + b_R
+values(image_corrected_vignetting_R) = as.integer(values(image_corrected_vignetting_R))
+writeRaster(image_corrected_vignetting_R,path_vignetting_R,datatype = datatype(raw_rast_R),overwrite=T)
 
 x_mat_RE = matrix(rep(1:width_RE,each=height_RE),ncol=width_RE)
 y_mat_RE = matrix(rep(1:height_RE,times=width_RE),ncol=width_RE)
 matrice_vignetting_RE = polynomial_correction_RE(x_mat_RE,y_mat_RE)
 image_corrected_vignetting_RE = raw_rast_RE*rast(matrice_vignetting_RE)
-writeRaster(image_corrected_vignetting_RE,path_vignetting_RE)
+max_raw_RE = max(values(raw_rast_RE))
+min_raw_RE = min(values(raw_rast_RE))
+max_corrected_RE = max(values(image_corrected_vignetting_RE))
+min_corrected_RE = min(values(image_corrected_vignetting_RE))
+a_RE = (max_raw_RE-min_raw_RE)/(max_corrected_RE-min_corrected_RE)
+b_RE = min_raw_RE - a_RE*min_corrected_RE
+image_corrected_vignetting_RE = a_RE * image_corrected_vignetting_RE + b_RE
+values(image_corrected_vignetting_RE) = as.integer(values(image_corrected_vignetting_RE))
+writeRaster(image_corrected_vignetting_RE,path_vignetting_RE,datatype = datatype(raw_rast_RE),overwrite=T)
 
 ##Distortion correction-------------------------------------------------------------------------------------------
 image_corrected_distorsion_G = distorsion_correction_python(path_script_python_distorsion,path_vignetting_G,path_distorsion_G,fx_G,fy_G,Cx_G+cx_G,Cy_G+cy_G,k1_G,k2_G,p1_G,p2_G,k3_G)
 image_corrected_distorsion_NIR = distorsion_correction_python(path_script_python_distorsion,path_vignetting_NIR,path_distorsion_NIR,fx_NIR,fy_NIR,Cx_NIR+cx_NIR,Cy_NIR+cy_NIR,k1_NIR,k2_NIR,p1_NIR,p2_NIR,k3_NIR)
 image_corrected_distorsion_R = distorsion_correction_python(path_script_python_distorsion,path_vignetting_R,path_distorsion_R,fx_R,fy_R,Cx_R+cx_R,Cy_R+cy_R,k1_R,k2_R,p1_R,p2_R,k3_R)
 image_corrected_distorsion_RE = distorsion_correction_python(path_script_python_distorsion,path_vignetting_RE,path_distorsion_RE,fx_RE,fy_RE,Cx_RE+cx_RE,Cy_RE+cy_RE,k1_RE,k2_RE,p1_RE,p2_RE,k3_RE)
+
+##Alignment correction-------------------------------------------------------------------------------------------
+image_corrected_alignment_G = alignment_correction_python(path_script_python_alignment,path_distorsion_G,path_alignment_G,M11_G,M12_G,M13_G,M21_G,M22_G,M23_G,M31_G,M32_G,M33_G)
+image_corrected_alignment_NIR = alignment_correction_python(path_script_python_alignment,path_distorsion_NIR,path_alignment_NIR,M11_NIR,M12_NIR,M13_NIR,M21_NIR,M22_NIR,M23_NIR,M31_NIR,M32_NIR,M33_NIR)
+image_corrected_alignment_R = alignment_correction_python(path_script_python_alignment,path_distorsion_R,path_alignment_R,M11_R,M12_R,M13_R,M21_R,M22_R,M23_R,M31_R,M32_R,M33_R)
+image_corrected_alignment_RE = alignment_correction_python(path_script_python_alignment,path_distorsion_RE,path_alignment_RE,M11_RE,M12_RE,M13_RE,M21_RE,M22_RE,M23_RE,M31_RE,M32_RE,M33_RE)
