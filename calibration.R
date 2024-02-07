@@ -15,10 +15,12 @@ path_RE = "example_images/example_MS_RE.TIF"
 path_dir_out_vignetting = "step_1_vignetting"
 path_dir_out_distorsion = "step_2_distorsion"
 path_dir_out_alignment  = "step_3_alignment"
+path_dir_out_ECC        = "step_4_ECC_alignment"
 
-#Path of the python script used for distorsion correction
+#Path of the python scripts used for opencv functions
 path_script_python_distorsion = "distorsion_calibration.py"
 path_script_python_alignment = "alignment_calibration.py"
+path_script_python_ECC_alignment = "ECC_alignment_calibration.py"
 
 #Name of the images
 name_image_G = strsplit(path_G,"/")[[1]][length(strsplit(path_G,"/")[[1]])]
@@ -43,6 +45,12 @@ path_alignment_G = paste(path_dir_out_alignment,paste(substr(name_image_G,1,ncha
 path_alignment_NIR = paste(path_dir_out_alignment,paste(substr(name_image_NIR,1,nchar(name_image_NIR)-4),"_alignment_corrected.TIF",sep = ""),sep = "/")
 path_alignment_R = paste(path_dir_out_alignment,paste(substr(name_image_R,1,nchar(name_image_R)-4),"_alignment_corrected.TIF",sep = ""),sep = "/")
 path_alignment_RE = paste(path_dir_out_alignment,paste(substr(name_image_RE,1,nchar(name_image_RE)-4),"_alignment_corrected.TIF",sep = ""),sep = "/")
+
+#Path of images stored after ECC alignment correction
+path_ECC_G = paste(path_dir_out_ECC,paste(substr(name_image_G,1,nchar(name_image_G)-4),"_ECC_corrected.TIF",sep = ""),sep = "/")
+path_ECC_NIR = paste(path_dir_out_ECC,paste(substr(name_image_NIR,1,nchar(name_image_NIR)-4),"_ECC_corrected.TIF",sep = ""),sep = "/")
+path_ECC_R = paste(path_dir_out_ECC,paste(substr(name_image_R,1,nchar(name_image_R)-4),"_ECC_corrected.TIF",sep = ""),sep = "/")
+path_ECC_RE = paste(path_dir_out_ECC,paste(substr(name_image_RE,1,nchar(name_image_RE)-4),"_ECC_corrected.TIF",sep = ""),sep = "/")
 
 ##Importing exif--------------------------------------------------------------------------------------------------
 if(!(exists("exif_G") && exists("exif_NIR") && exists("exif_R") && exists("exif_RE"))){
@@ -233,6 +241,13 @@ alignment_correction_python <- function(path_script_python_alignment,path_image_
   image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
 }
 
+#ECC
+ECC_correction_python <- function(path_script_python_ECC_alignment,path_image_in_1,path_image_in_2,path_image_out){
+  system(paste("python", path_script_python_ECC_alignment, path_image_in_1, path_image_in_2, path_image_out))
+  image_out_rast = rast(path_image_out)
+  image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
+}
+
 ##Vignetting correction-------------------------------------------------------------------------------------------
 x_mat_G = matrix(rep(1:width_G,each=height_G),ncol=width_G)
 y_mat_G = matrix(rep(1:height_G,times=width_G),ncol=width_G)
@@ -301,3 +316,9 @@ image_corrected_alignment_G = alignment_correction_python(path_script_python_ali
 image_corrected_alignment_NIR = alignment_correction_python(path_script_python_alignment,path_distorsion_NIR,path_alignment_NIR,M11_NIR,M12_NIR,M13_NIR,M21_NIR,M22_NIR,M23_NIR,M31_NIR,M32_NIR,M33_NIR)
 image_corrected_alignment_R = alignment_correction_python(path_script_python_alignment,path_distorsion_R,path_alignment_R,M11_R,M12_R,M13_R,M21_R,M22_R,M23_R,M31_R,M32_R,M33_R)
 image_corrected_alignment_RE = alignment_correction_python(path_script_python_alignment,path_distorsion_RE,path_alignment_RE,M11_RE,M12_RE,M13_RE,M21_RE,M22_RE,M23_RE,M31_RE,M32_RE,M33_RE)
+
+##ECC correction-------------------------------------------------------------------------------------------------
+file.copy(path_alignment_NIR,path_ECC_NIR,overwrite = T)
+image_corrected_ECC_alignment_G = ECC_correction_python(path_script_python_ECC_alignment,path_alignment_NIR,path_alignment_G,path_ECC_G)
+image_corrected_ECC_alignment_R = ECC_correction_python(path_script_python_ECC_alignment,path_alignment_NIR,path_alignment_R,path_ECC_R)
+image_corrected_ECC_alignment_RE = ECC_correction_python(path_script_python_ECC_alignment,path_alignment_NIR,path_alignment_RE,path_ECC_RE)
