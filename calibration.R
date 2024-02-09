@@ -6,16 +6,17 @@ system("python -m pip install opencv-python")
 
 ##Path------------------------------------------------------------------------------------------------------------
 #Path of the raw images for each bands
-path_G = "example_images/example_MS_G.TIF"
-path_NIR = "example_images/example_MS_NIR.TIF"
-path_R = "example_images/example_MS_R.TIF"
-path_RE = "example_images/example_MS_RE.TIF"
+path_G = "example_images/DJI_20240202122522_0001_MS_G.TIF"
+path_NIR = "example_images/DJI_20240202122522_0001_MS_NIR.TIF"
+path_R = "example_images/DJI_20240202122522_0001_MS_R.TIF"
+path_RE = "example_images/DJI_20240202122522_0001_MS_RE.TIF"
 
 #Path of directories where images will be stored after each corrections
 path_dir_out_vignetting = "step_1_vignetting"
 path_dir_out_distorsion = "step_2_distorsion"
 path_dir_out_alignment  = "step_3_alignment"
 path_dir_out_ECC        = "step_4_ECC_alignment"
+path_dir_out_homogeni   = "step_5_homogenization"
 
 #Path of the python scripts used for opencv functions
 path_script_python_distorsion = "distorsion_calibration.py"
@@ -52,13 +53,17 @@ path_ECC_NIR = paste(path_dir_out_ECC,paste(substr(name_image_NIR,1,nchar(name_i
 path_ECC_R = paste(path_dir_out_ECC,paste(substr(name_image_R,1,nchar(name_image_R)-4),"_ECC_corrected.TIF",sep = ""),sep = "/")
 path_ECC_RE = paste(path_dir_out_ECC,paste(substr(name_image_RE,1,nchar(name_image_RE)-4),"_ECC_corrected.TIF",sep = ""),sep = "/")
 
+#Path of images stored after homogenization
+path_homogenized_G = paste(path_dir_out_homogeni,paste(substr(name_image_G,1,nchar(name_image_G)-4),"_homogenized.TIF",sep = ""),sep = "/")
+path_homogenized_NIR = paste(path_dir_out_homogeni,paste(substr(name_image_NIR,1,nchar(name_image_NIR)-4),"_homogenized.TIF",sep = ""),sep = "/")
+path_homogenized_R = paste(path_dir_out_homogeni,paste(substr(name_image_R,1,nchar(name_image_R)-4),"_homogenized.TIF",sep = ""),sep = "/")
+path_homogenized_RE = paste(path_dir_out_homogeni,paste(substr(name_image_RE,1,nchar(name_image_RE)-4),"_homogenized.TIF",sep = ""),sep = "/")
+
 ##Importing exif--------------------------------------------------------------------------------------------------
-if(!(exists("exif_G") && exists("exif_NIR") && exists("exif_R") && exists("exif_RE"))){
-  exif_G = exif_read(path_G)
-  exif_NIR = exif_read(path_NIR)
-  exif_R = exif_read(path_R)
-  exif_RE = exif_read(path_RE)
-}
+exif_G = exif_read(path_G)
+exif_NIR = exif_read(path_NIR)
+exif_R = exif_read(path_R)
+exif_RE = exif_read(path_RE)
 
 ##Getting parameters from exif------------------------------------------------------------------------------------
 height_G = exif_G$ImageHeight
@@ -106,16 +111,6 @@ c3_RE = exif_RE$VignettingPolynomial[[1]][3]
 c4_RE = exif_RE$VignettingPolynomial[[1]][4]
 c5_RE = exif_RE$VignettingPolynomial[[1]][5]
 c6_RE = exif_RE$VignettingPolynomial[[1]][6]
-
-vignetting_flag_G = exif_G$VignettingFlag
-vignetting_flag_NIR = exif_NIR$VignettingFlag
-vignetting_flag_R = exif_R$VignettingFlag
-vignetting_flag_RE = exif_RE$VignettingFlag
-
-distorsion_flag_G = exif_G$DewarpFlag
-distorsion_flag_NIR = exif_NIR$DewarpFlag
-distorsion_flag_R = exif_R$DewarpFlag
-distorsion_flag_RE = exif_RE$DewarpFlag
 
 distorsion_info_G = as.numeric(strsplit(exif_G$DewarpData,"[;,]")[[1]])
 distorsion_info_NIR = as.numeric(strsplit(exif_NIR$DewarpData,"[;,]")[[1]])
@@ -199,13 +194,41 @@ M31_RE = alignment_info_RE[7]
 M32_RE = alignment_info_RE[8]
 M33_RE = alignment_info_RE[9]
 
+BlackLevel_G = exif_G$BlackLevel
+BlackLevel_NIR = exif_NIR$BlackLevel
+BlackLevel_R = exif_R$BlackLevel
+BlackLevel_RE = exif_RE$BlackLevel
+
+BPS_G = exif_G$BitsPerSample
+BPS_NIR = exif_NIR$BitsPerSample
+BPS_R = exif_R$BitsPerSample
+BPS_RE = exif_RE$BitsPerSample
+
+exposure_time_G = exif_G$ExposureTime
+exposure_time_NIR = exif_NIR$ExposureTime
+exposure_time_R = exif_R$ExposureTime
+exposure_time_RE = exif_RE$ExposureTime
+
+gain_G = exif_G$SensorGain
+gain_NIR = exif_NIR$SensorGain
+gain_R = exif_R$SensorGain
+gain_RE = exif_RE$SensorGain
+
+radiance_down_G = exif_G$Irradiance
+radiance_down_NIR = exif_NIR$Irradiance
+radiance_down_R = exif_R$Irradiance
+radiance_down_RE = exif_RE$Irradiance
+
+sensor_gain_adjustment_G = exif_G$SensorGainAdjustment
+sensor_gain_adjustment_NIR = exif_NIR$SensorGainAdjustment
+sensor_gain_adjustment_R = exif_R$SensorGainAdjustment
+sensor_gain_adjustment_RE = exif_RE$SensorGainAdjustment
+
 ##Importing images------------------------------------------------------------------------------------------------
-if(!(exists("raw_rast_G") && exists("raw_rast_NIR") && exists("raw_rast_R") && exists("raw_rast_RE"))){
-  raw_rast_G = rast(path_G)
-  raw_rast_NIR = rast(path_NIR)
-  raw_rast_R = rast(path_R)
-  raw_rast_RE = rast(path_RE)
-}
+raw_rast_G = rast(path_G)
+raw_rast_NIR = rast(path_NIR)
+raw_rast_R = rast(path_R)
+raw_rast_RE = rast(path_RE)
 
 ##Functions-------------------------------------------------------------------------------------------------------
 #Vignetting
@@ -319,6 +342,82 @@ image_corrected_alignment_RE = alignment_correction_python(path_script_python_al
 
 ##ECC correction-------------------------------------------------------------------------------------------------
 file.copy(path_alignment_NIR,path_ECC_NIR,overwrite = T)
+image_corrected_ECC_alignment_NIR = t(matrix(rast(path_ECC_NIR),ncol=height_NIR))
 image_corrected_ECC_alignment_G = ECC_correction_python(path_script_python_ECC_alignment,path_alignment_NIR,path_alignment_G,path_ECC_G)
 image_corrected_ECC_alignment_R = ECC_correction_python(path_script_python_ECC_alignment,path_alignment_NIR,path_alignment_R,path_ECC_R)
 image_corrected_ECC_alignment_RE = ECC_correction_python(path_script_python_ECC_alignment,path_alignment_NIR,path_alignment_RE,path_ECC_RE)
+
+##Homogenization-------------------------------------------------------------------------------------------------
+G_test = image_corrected_ECC_alignment_G<=min_raw_G
+NIR_test = image_corrected_ECC_alignment_NIR<=min_raw_NIR
+R_test = image_corrected_ECC_alignment_R<=min_raw_R
+RE_test = image_corrected_ECC_alignment_RE<=min_raw_RE
+indices_test = which(G_test|NIR_test|R_test|RE_test)
+
+image_corrected_ECC_homogenized_G = image_corrected_ECC_alignment_G
+image_corrected_ECC_homogenized_NIR = image_corrected_ECC_alignment_NIR
+image_corrected_ECC_homogenized_R = image_corrected_ECC_alignment_R
+image_corrected_ECC_homogenized_RE = image_corrected_ECC_alignment_RE
+
+image_corrected_ECC_homogenized_G[indices_test]=NaN
+image_corrected_ECC_homogenized_NIR[indices_test]=NaN
+image_corrected_ECC_homogenized_R[indices_test]=NaN
+image_corrected_ECC_homogenized_RE[indices_test]=NaN
+
+writeRaster(rast(image_corrected_ECC_homogenized_G),path_homogenized_G,datatype = datatype(raw_rast_G),overwrite=T)
+writeRaster(rast(image_corrected_ECC_homogenized_NIR),path_homogenized_NIR,datatype = datatype(raw_rast_NIR),overwrite=T)
+writeRaster(rast(image_corrected_ECC_homogenized_R),path_homogenized_R,datatype = datatype(raw_rast_R),overwrite=T)
+writeRaster(rast(image_corrected_ECC_homogenized_RE),path_homogenized_RE,datatype = datatype(raw_rast_RE),overwrite=T)
+
+##Radiance-----------------------------------------------------------------------------------------------------
+radiance_G = ((rast(path_homogenized_G)-BlackLevel_G)/(2^BPS_G))/(gain_G*exposure_time_G)
+radiance_NIR = ((rast(path_homogenized_NIR)-BlackLevel_NIR)/(2^BPS_NIR))/(gain_NIR*exposure_time_NIR)
+radiance_R = ((rast(path_homogenized_R)-BlackLevel_R)/(2^BPS_R))/(gain_R*exposure_time_R)
+radiance_RE = ((rast(path_homogenized_RE)-BlackLevel_RE)/(2^BPS_RE))/(gain_RE*exposure_time_RE)
+
+##Reflectance/rhoNIR---------------------------------------------------------------------------------------------
+reflectance_G = radiance_G*sensor_gain_adjustment_G/radiance_down_G
+reflectance_NIR = radiance_NIR*sensor_gain_adjustment_NIR/radiance_down_NIR
+reflectance_R = radiance_R*sensor_gain_adjustment_R/radiance_down_R
+reflectance_RE = radiance_RE*sensor_gain_adjustment_RE/radiance_down_RE
+
+##rhoNIR Computation---------------------------------------------------------------------------------------------
+Q_bas = 0.95
+Q_bas_G = quantile(as.vector(values(reflectance_G)),Q_bas,na.rm=T)[[1]]
+Q_bas_NIR = quantile(as.vector(values(reflectance_NIR)),Q_bas,na.rm=T)[[1]]
+Q_bas_R = quantile(as.vector(values(reflectance_R)),Q_bas,na.rm=T)[[1]]
+Q_bas_RE = quantile(as.vector(values(reflectance_RE)),Q_bas,na.rm=T)[[1]]
+
+Seuil_bas_G = reflectance_G>Q_bas_G
+Seuil_bas_NIR = reflectance_NIR>Q_bas_NIR
+Seuil_bas_R = reflectance_R>Q_bas_R
+Seuil_bas_RE = reflectance_RE>Q_bas_RE
+
+x_min_spectralon = 1000
+x_max_spectralon = 1300
+y_min_spectralon = 500
+y_max_spectralon = 1000
+
+Seuil_x = rast(x_mat_G)<x_max_spectralon & rast(x_mat_G)>x_min_spectralon
+Seuil_y = rast(1945-y_mat_G)<y_max_spectralon & rast(1945-y_mat_G)>y_min_spectralon
+
+spectralon = Seuil_bas_G & Seuil_bas_NIR & Seuil_bas_R & Seuil_bas_RE & Seuil_x & Seuil_y
+
+reflectance_G_spectralon = reflectance_G
+values(reflectance_G_spectralon)[which(values(!spectralon))] = NaN
+reflectance_NIR_spectralon = reflectance_NIR
+values(reflectance_NIR_spectralon)[which(values(!spectralon))] = NaN
+reflectance_R_spectralon = reflectance_R
+values(reflectance_R_spectralon)[which(values(!spectralon))] = NaN
+reflectance_RE_spectralon = reflectance_RE
+values(reflectance_RE_spectralon)[which(values(!spectralon))] = NaN
+
+mean_reflectance_spectralon_G = mean(values(reflectance_G_spectralon),na.rm=T)
+mean_reflectance_spectralon_NIR = mean(values(reflectance_NIR_spectralon),na.rm=T)
+mean_reflectance_spectralon_R = mean(values(reflectance_R_spectralon),na.rm=T)
+mean_reflectance_spectralon_RE = mean(values(reflectance_RE_spectralon),na.rm=T)
+
+rhoNIR_G = 0.985/mean_reflectance_spectralon_G
+rhoNIR_NIR = 0.985/mean_reflectance_spectralon_NIR
+rhoNIR_R = 0.985/mean_reflectance_spectralon_R
+rhoNIR_RE = 0.985/mean_reflectance_spectralon_RE
