@@ -8,7 +8,7 @@ Augustin Debly
 
 ### Step 2 : Distorsion correction
 
-### Step 3 : Alignment
+### Step 3 : Alignment correction
 
 ### Step 4 : ECC alignment correction
 
