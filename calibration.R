@@ -1,5 +1,8 @@
+##Library-----------------------------------------------------------------------
 library(exiftoolr)
 library(terra)
+system("python -m pip install numpy")
+system("python -m pip install opencv-python")
 
 ##Keep steps stored-------------------------------------------------------------
 #Just for storage, steps will still be processed and temporarily stored even if FALSE
