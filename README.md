@@ -3,7 +3,7 @@ Augustin Debly
 
 ## DJI Mavic 3M
 
-## Geometrical calibration
+## Geometric processing
 ### Step 1 : Vignetting correction
 
 ### Step 2 : Distorsion correction
@@ -14,6 +14,8 @@ Augustin Debly
 
 ### Step 5 : Radiance computation
 
-## Digital Numbers to radiance
+## Spectral processing
 
-## Radiance to reflectance
+### Step 6 : Digital Number (DN) to radiance
+
+### Step 7 : Radiance to reflectance
