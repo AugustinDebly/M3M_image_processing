@@ -10,9 +10,9 @@ Augustin Debly
 
 ### Step 3 : Alignment
 
-### Step 4 : Exposure time correction
+### Step 4 : ECC alignment correction
 
-### Step 5 : Radiance computation
+### Step 5 : Homogenization
 
 ## Spectral processing
 
