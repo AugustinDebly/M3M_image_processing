@@ -1,4 +1,5 @@
 ##Library-----------------------------------------------------------------------
+
 library(exiftoolr)
 library(terra)
 system("python -m pip install numpy")
@@ -6,6 +7,7 @@ system("python -m pip install opencv-python")
 
 ##Keep steps stored-------------------------------------------------------------
 #Just for storage, steps will still be processed and temporarily stored even if FALSE
+
 keep_step_1_vignetting     = TRUE
 keep_step_2_distorsion     = TRUE
 keep_step_3_alignment      = TRUE
@@ -13,6 +15,7 @@ keep_step_4_ECC_alignment  = TRUE
 keep_step_5_homogenization = TRUE
 
 ##Path--------------------------------------------------------------------------
+
 path_in                          = "example_images"
 
 path_out_1                       = "step_1_vignetting"
@@ -278,6 +281,7 @@ for(i in seq(length(path_images_in)/4)){
   sensor_Gain_adjustment_b4 = exif_b4$SensorGainAdjustment
   
   #Vignetting-------------------------------------------------------------------
+  
   x_mat_b1              = matrix(rep(1:width_b1,each=height_b1),ncol=width_b1)
   y_mat_b1              = matrix(rep(1:height_b1,times=width_b1),ncol=width_b1)
   x_mat_b2              = matrix(rep(1:width_b2,each=height_b2),ncol=width_b2)
@@ -332,32 +336,40 @@ for(i in seq(length(path_images_in)/4)){
   
   writeRaster(image_corrected_vignetting_b1,p_out_1_b1,datatype = datatype(raw_rast_b1),overwrite=T)
   #system(command = paste("exiftool -tagsFromFile",p_in_b1,"-xmp",p_out_1_b1,sep = " "))
+  
   writeRaster(image_corrected_vignetting_b2,p_out_1_b2,datatype = datatype(raw_rast_b2),overwrite=T)
   #system(command = paste("exiftool -tagsFromFile",p_in_b2,"-xmp",p_out_1_b2,sep = " "))
+  
   writeRaster(image_corrected_vignetting_b3,p_out_1_b3,datatype = datatype(raw_rast_b3),overwrite=T)
   #system(command = paste("exiftool -tagsFromFile",p_in_b3,"-xmp",p_out_1_b3,sep = " "))
+  
   writeRaster(image_corrected_vignetting_b4,p_out_1_b4,datatype = datatype(raw_rast_b4),overwrite=T)
   #system(command = paste("exiftool -tagsFromFile",p_in_b4,"-xmp",p_out_1_b4,sep = " "))
   
+  
   #Distorsion-------------------------------------------------------------------
+  
   image_corrected_distorsion_b1 = distorsion_correction_python(path_script_python_distorsion,p_out_1_b1,p_out_2_b1,fx_b1,fy_b1,Cx_b1+cx_b1,Cy_b1+cy_b1,k1_b1,k2_b1,p1_b1,p2_b1,k3_b1)
   image_corrected_distorsion_b2 = distorsion_correction_python(path_script_python_distorsion,p_out_1_b2,p_out_2_b2,fx_b2,fy_b2,Cx_b2+cx_b2,Cy_b2+cy_b2,k1_b2,k2_b2,p1_b2,p2_b2,k3_b2)
   image_corrected_distorsion_b3 = distorsion_correction_python(path_script_python_distorsion,p_out_1_b3,p_out_2_b3,fx_b3,fy_b3,Cx_b3+cx_b3,Cy_b3+cy_b3,k1_b3,k2_b3,p1_b3,p2_b3,k3_b3)
   image_corrected_distorsion_b4 = distorsion_correction_python(path_script_python_distorsion,p_out_1_b4,p_out_2_b4,fx_b4,fy_b4,Cx_b4+cx_b4,Cy_b4+cy_b4,k1_b4,k2_b4,p1_b4,p2_b4,k3_b4)
   
   #Alignment--------------------------------------------------------------------
+  
   image_corrected_alignment_b1 = alignment_correction_python(path_script_python_alignment,p_out_2_b1,p_out_3_b1,M11_b1,M12_b1,M13_b1,M21_b1,M22_b1,M23_b1,M31_b1,M32_b1,M33_b1)
   image_corrected_alignment_b2 = alignment_correction_python(path_script_python_alignment,p_out_2_b2,p_out_3_b2,M11_b2,M12_b2,M13_b2,M21_b2,M22_b2,M23_b2,M31_b2,M32_b2,M33_b2)
   image_corrected_alignment_b3 = alignment_correction_python(path_script_python_alignment,p_out_2_b3,p_out_3_b3,M11_b3,M12_b3,M13_b3,M21_b3,M22_b3,M23_b3,M31_b3,M32_b3,M33_b3)
   image_corrected_alignment_b4 = alignment_correction_python(path_script_python_alignment,p_out_2_b4,p_out_3_b4,M11_b4,M12_b4,M13_b4,M21_b4,M22_b4,M23_b4,M31_b4,M32_b4,M33_b4)
   
   #ECC Alignment----------------------------------------------------------------
+  
   file.copy(p_out_3_b1,p_out_4_b1,overwrite = T)
   image_corrected_ECC_alignment_b2 = ECC_correction_python(path_script_python_ECC_alignment,p_out_3_b1,p_out_3_b2,p_out_4_b2)
   image_corrected_ECC_alignment_b3 = ECC_correction_python(path_script_python_ECC_alignment,p_out_3_b1,p_out_3_b3,p_out_4_b3)
   image_corrected_ECC_alignment_b4 = ECC_correction_python(path_script_python_ECC_alignment,p_out_3_b1,p_out_3_b4,p_out_4_b4)
   
   #Homogenization---------------------------------------------------------------
+  
   image_corrected_homogenized_b1 = rast(p_out_4_b1)
   image_corrected_homogenized_b2 = rast(p_out_4_b2)
   image_corrected_homogenized_b3 = rast(p_out_4_b3)
@@ -377,6 +389,7 @@ for(i in seq(length(path_images_in)/4)){
   writeRaster(image_corrected_homogenized_b4,p_out_5_b4,datatype = datatype(raw_rast_b4),overwrite=T)
   
   #Remove unwanted storage------------------------------------------------------
+  
   if(!keep_step_1_vignetting){
     file.remove(p_out_1_b1)
     file.remove(p_out_1_b2)
