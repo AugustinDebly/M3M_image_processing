@@ -17,22 +17,29 @@ keep_step_2_distorsion     = TRUE
 keep_step_3_alignment      = TRUE
 keep_step_4_ECC_alignment  = TRUE
 keep_step_5_homogenization = TRUE
+keep_step_6_radiance       = TRUE
+keep_step_7_reflectance    = TRUE
+keep_step_8_NDVI           = TRUE
 
 ##Path--------------------------------------------------------------------------
 
-path_in                          = "example_images"
+path_in                          = "raw_images"
 
 path_out_1                       = "step_1_vignetting"
 path_out_2                       = "step_2_distorsion"
 path_out_3                       = "step_3_alignment"
 path_out_4                       = "step_4_ECC_alignment"
 path_out_5                       = "step_5_homogenization"
+path_out_6                       = "step_6_radiance"
+path_out_7                       = "step_7_reflectance"
+path_out_8                       = "step_8_NDVI"
 
 path_script_python_distorsion    = "distorsion_calibration.py"
 path_script_python_alignment     = "alignment_calibration.py"
 path_script_python_ECC_alignment = "ECC_alignment_calibration.py"
 
 name_images                      = list.files(path_in,pattern = ".TIF")
+name_images_NDVI                 = paste(unique(substr(name_images,1,nchar(name_images[1])-9)),".TIF",sep="")
 
 path_images_in                   = paste(path_in,name_images,sep="/")
 path_images_out_1                = paste(path_out_1,name_images,sep="/")
@@ -40,6 +47,9 @@ path_images_out_2                = paste(path_out_2,name_images,sep="/")
 path_images_out_3                = paste(path_out_3,name_images,sep="/")
 path_images_out_4                = paste(path_out_4,name_images,sep="/")
 path_images_out_5                = paste(path_out_5,name_images,sep="/")
+path_images_out_6                = paste(path_out_6,name_images,sep="/")
+path_images_out_7                = paste(path_out_7,name_images,sep="/")
+path_images_out_8                = paste(path_out_8,name_images_NDVI,sep="/")
 
 ##Functions---------------------------------------------------------------------
 
@@ -114,13 +124,16 @@ for(i in seq(n)){
     cat(percentage_print(i,n),"\r")
   }
   
-  pattern    = paste("_",formatC(i,3,flag = "0",format="d"),"_",sep="")
+  pattern    = paste("_",formatC(i,3,flag = "0",format="d"),sep="")
   p_in       = path_images_in[which(grepl(pattern,path_images_in))]
   p_out_1    = path_images_out_1[which(grepl(pattern,path_images_out_1))]
   p_out_2    = path_images_out_2[which(grepl(pattern,path_images_out_2))]
   p_out_3    = path_images_out_3[which(grepl(pattern,path_images_out_3))]
   p_out_4    = path_images_out_4[which(grepl(pattern,path_images_out_4))]
   p_out_5    = path_images_out_5[which(grepl(pattern,path_images_out_5))]
+  p_out_6    = path_images_out_6[which(grepl(pattern,path_images_out_6))]
+  p_out_7    = path_images_out_7[which(grepl(pattern,path_images_out_7))]
+  p_out_8    = path_images_out_8[which(grepl(pattern,path_images_out_8))]
   
   p_in_b1    = p_in[1]
   p_in_b2    = p_in[2]
@@ -151,6 +164,16 @@ for(i in seq(n)){
   p_out_5_b2 = p_out_5[2]
   p_out_5_b3 = p_out_5[3]
   p_out_5_b4 = p_out_5[4]
+  
+  p_out_6_b1 = p_out_6[1]
+  p_out_6_b2 = p_out_6[2]
+  p_out_6_b3 = p_out_6[3]
+  p_out_6_b4 = p_out_6[4]
+  
+  p_out_7_b1 = p_out_7[1]
+  p_out_7_b2 = p_out_7[2]
+  p_out_7_b3 = p_out_7[3]
+  p_out_7_b4 = p_out_7[4]
   
   #Importing metadata-----------------------------------------------------------
   
@@ -328,7 +351,7 @@ for(i in seq(n)){
   sensor_Gain_adjustment_b3 = exif_b3$SensorGainAdjustment
   sensor_Gain_adjustment_b4 = exif_b4$SensorGainAdjustment
   
-  #Vignetting-------------------------------------------------------------------
+  #1 Vignetting-----------------------------------------------------------------
   
   x_mat_b1              = matrix(rep(1:width_b1,each=height_b1),ncol=width_b1)
   y_mat_b1              = matrix(rep(1:height_b1,times=width_b1),ncol=width_b1)
@@ -395,7 +418,7 @@ for(i in seq(n)){
   #system(command = paste("exiftool -tagsFromFile",p_in_b4,"-xmp",p_out_1_b4,sep = " "))
   
   
-  #Distorsion-------------------------------------------------------------------
+  #2 Distorsion-----------------------------------------------------------------
   
   image_corrected_distorsion_b1 = distorsion_correction_python(path_script_python_distorsion,p_out_1_b1,p_out_2_b1,fx_b1,fy_b1,Cx_b1+cx_b1,Cy_b1+cy_b1,k1_b1,k2_b1,p1_b1,p2_b1,k3_b1)
   image_corrected_distorsion_b2 = distorsion_correction_python(path_script_python_distorsion,p_out_1_b2,p_out_2_b2,fx_b2,fy_b2,Cx_b2+cx_b2,Cy_b2+cy_b2,k1_b2,k2_b2,p1_b2,p2_b2,k3_b2)
@@ -409,7 +432,7 @@ for(i in seq(n)){
     file.remove(p_out_1_b4)
   }
   
-  #Alignment--------------------------------------------------------------------
+  #3 Alignment------------------------------------------------------------------
   
   image_corrected_alignment_b1 = alignment_correction_python(path_script_python_alignment,p_out_2_b1,p_out_3_b1,M11_b1,M12_b1,M13_b1,M21_b1,M22_b1,M23_b1,M31_b1,M32_b1,M33_b1)
   image_corrected_alignment_b2 = alignment_correction_python(path_script_python_alignment,p_out_2_b2,p_out_3_b2,M11_b2,M12_b2,M13_b2,M21_b2,M22_b2,M23_b2,M31_b2,M32_b2,M33_b2)
@@ -423,7 +446,7 @@ for(i in seq(n)){
     file.remove(p_out_2_b4)
   }
   
-  #ECC Alignment----------------------------------------------------------------
+  #4 ECC Alignment--------------------------------------------------------------
   
   file.copy(p_out_3_b1,p_out_4_b1,overwrite = T)
   image_corrected_ECC_alignment_b2 = ECC_correction_python(path_script_python_ECC_alignment,p_out_3_b1,p_out_3_b2,p_out_4_b2)
@@ -437,7 +460,7 @@ for(i in seq(n)){
     file.remove(p_out_3_b4)
   }
   
-  #Homogenization---------------------------------------------------------------
+  #5 Homogenization-------------------------------------------------------------
   
   image_corrected_homogenized_b1 = rast(p_out_4_b1)
   image_corrected_homogenized_b2 = rast(p_out_4_b2)
@@ -464,11 +487,34 @@ for(i in seq(n)){
     file.remove(p_out_4_b4)
   }
   
+  #6 Radiance-------------------------------------------------------------------
+  
   if(!keep_step_5_homogenization){
     file.remove(p_out_5_b1)
     file.remove(p_out_5_b2)
     file.remove(p_out_5_b3)
     file.remove(p_out_5_b4)
+  }
+  
+  #7 Reflectance----------------------------------------------------------------
+  
+  if(!keep_step_6_radiance){
+    file.remove(p_out_6_b1)
+    file.remove(p_out_6_b2)
+    file.remove(p_out_6_b3)
+    file.remove(p_out_6_b4)
+  }
+  
+  #8 NDVI-----------------------------------------------------------------------
+  
+  if(keep_step_8_NDVI){
+    
+  }
+  if(!keep_step_7_reflectance){
+    file.remove(p_out_7_b1)
+    file.remove(p_out_7_b2)
+    file.remove(p_out_7_b3)
+    file.remove(p_out_7_b4)
   }
 }
 
