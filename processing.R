@@ -489,6 +489,16 @@ for(i in seq(n)){
   
   #6 Radiance-------------------------------------------------------------------
   
+  image_radiance_b1 = ((rast(p_out_5_b1)-BlackLevel_b1)/(2^BPS_b1))/(gain_b1*exposure_time_b1)
+  image_radiance_b2 = ((rast(p_out_5_b2)-BlackLevel_b2)/(2^BPS_b2))/(gain_b2*exposure_time_b2)
+  image_radiance_b3 = ((rast(p_out_5_b3)-BlackLevel_b3)/(2^BPS_b3))/(gain_b3*exposure_time_b3)
+  image_radiance_b4 = ((rast(p_out_5_b4)-BlackLevel_b4)/(2^BPS_b4))/(gain_b4*exposure_time_b4)
+  
+  writeRaster(image_radiance_b1,p_out_6_b1,overwrite=T)
+  writeRaster(image_radiance_b2,p_out_6_b2,overwrite=T)
+  writeRaster(image_radiance_b3,p_out_6_b3,overwrite=T)
+  writeRaster(image_radiance_b4,p_out_6_b4,overwrite=T)
+  
   if(!keep_step_5_homogenization){
     file.remove(p_out_5_b1)
     file.remove(p_out_5_b2)
@@ -497,6 +507,61 @@ for(i in seq(n)){
   }
   
   #7 Reflectance----------------------------------------------------------------
+  
+  #Q_bas = 0.95
+  #Q_bas_b1 = quantile(as.vector(values(image_radiance_b1)),Q_bas,na.rm=T)[[1]]
+  #Q_bas_b2 = quantile(as.vector(values(image_radiance_b2)),Q_bas,na.rm=T)[[1]]
+  #Q_bas_b3 = quantile(as.vector(values(image_radiance_b3)),Q_bas,na.rm=T)[[1]]
+  #Q_bas_b4 = quantile(as.vector(values(image_radiance_b4)),Q_bas,na.rm=T)[[1]]
+  
+  #Seuil_bas_b1 = image_radiance_b1>Q_bas_b1
+  #Seuil_bas_b2 = image_radiance_b2>Q_bas_b2
+  #Seuil_bas_b3 = image_radiance_b3>Q_bas_b3
+  #Seuil_bas_b4 = image_radiance_b4>Q_bas_b4
+  
+  #x_min_spectralon = 1000
+  #x_max_spectralon = 1300
+  #y_min_spectralon = 500
+  #y_max_spectralon = 1000
+  
+  #Seuil_x = rast(x_mat_b1)<x_max_spectralon & rast(x_mat_b1)>x_min_spectralon
+  #Seuil_y = rast(1945-y_mat_b1)<y_max_spectralon & rast(1945-y_mat_b1)>y_min_spectralon
+  
+  #spectralon = Seuil_bas_b1 & Seuil_bas_b2 & Seuil_bas_b3 & Seuil_bas_b4 & Seuil_x & Seuil_y
+  
+  #image_radiance_b1_spectralon = image_radiance_b1
+  #values(image_radiance_b1_spectralon)[which(values(!spectralon))] = NaN
+  #image_radiance_b2_spectralon = image_radiance_b2
+  #values(image_radiance_b2_spectralon)[which(values(!spectralon))] = NaN
+  #image_radiance_b3_spectralon = image_radiance_b3
+  #values(image_radiance_b3_spectralon)[which(values(!spectralon))] = NaN
+  #image_radiance_b4_spectralon = image_radiance_b4
+  #values(image_radiance_b4_spectralon)[which(values(!spectralon))] = NaN
+  
+  #image_reflectance_b1 = 0.845807434*image_radiance_b1/mean(values(image_radiance_b1_spectralon),na.rm=T)
+  #image_reflectance_b2 = 0.809610078*image_radiance_b2/mean(values(image_radiance_b2_spectralon),na.rm=T)
+  #image_reflectance_b3 = 0.832277534*image_radiance_b3/mean(values(image_radiance_b3_spectralon),na.rm=T)
+  #image_reflectance_b4 = 0.828049362*image_radiance_b4/mean(values(image_radiance_b4_spectralon),na.rm=T)
+  
+  coeff_b1 = 0.02753871
+  coeff_b2 = 0.06791631
+  coeff_b3 = 0.03104619
+  coeff_b4 = 0.03678175
+  
+  image_reflectance_b1 = image_radiance_b1/(coeff_b1*radiance_down_b1)
+  image_reflectance_b2 = image_radiance_b2/(coeff_b2*radiance_down_b2)
+  image_reflectance_b3 = image_radiance_b3/(coeff_b3*radiance_down_b3)
+  image_reflectance_b4 = image_radiance_b4/(coeff_b4*radiance_down_b4)
+  
+  #image_reflectance_b1 = rast(p_out_6_b1)*sensor_Gain_adjustment_b1/radiance_down_b1
+  #image_reflectance_b2 = rast(p_out_6_b2)*sensor_Gain_adjustment_b2/radiance_down_b2
+  #image_reflectance_b3 = rast(p_out_6_b3)*sensor_Gain_adjustment_b3/radiance_down_b3
+  #image_reflectance_b4 = rast(p_out_6_b4)*sensor_Gain_adjustment_b4/radiance_down_b4
+  
+  writeRaster(image_reflectance_b1,p_out_7_b1,overwrite=T)
+  writeRaster(image_reflectance_b2,p_out_7_b2,overwrite=T)
+  writeRaster(image_reflectance_b3,p_out_7_b3,overwrite=T)
+  writeRaster(image_reflectance_b4,p_out_7_b4,overwrite=T)
   
   if(!keep_step_6_radiance){
     file.remove(p_out_6_b1)
@@ -508,7 +573,13 @@ for(i in seq(n)){
   #8 NDVI-----------------------------------------------------------------------
   
   if(keep_step_8_NDVI){
+    reflectance_bands_path = c(p_out_7_b1,p_out_7_b2,p_out_7_b3,p_out_7_b4)
+    reflectance_NIR        = reflectance_bands_path[which(grepl("_NIR.TIF",reflectance_bands_path))]
+    reflectance_R          = reflectance_bands_path[which(grepl("_R.TIF",reflectance_bands_path))]
     
+    NDVI                   = (rast(reflectance_NIR)-rast(reflectance_R))/(rast(reflectance_NIR)+rast(reflectance_R))
+    
+    writeRaster(NDVI,p_out_8,overwrite=T)
   }
   if(!keep_step_7_reflectance){
     file.remove(p_out_7_b1)
