@@ -5,6 +5,10 @@ library(terra)
 system("python -m pip install numpy")
 system("python -m pip install opencv-python")
 
+##Option(s)---------------------------------------------------------------------
+
+print_percentage_bar_during_loop = TRUE
+
 ##Keep steps stored-------------------------------------------------------------
 #Just for storage, steps will still be processed and temporarily stored even if FALSE
 
@@ -46,26 +50,70 @@ polynomial_correction <- function(x,y,Cx,Cy,c1,c2,c3,c4,c5,c6){
 
 distorsion_correction_python <- function(path_script_python_distorsion,path_image_in,path_image_out,fx,fy,cx,cy,k1,k2,p1,p2,k3){
   system(paste("python",path_script_python_distorsion, path_image_in, path_image_out, fx, fy, cx, cy, k1, k2, p1, p2, k3))
-  image_out_rast = rast(path_image_out)
-  image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
-  return(image_out_matrix)
+  #image_out_rast = rast(path_image_out)
+  #image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
+  #return(image_out_matrix)
 }
 
 alignment_correction_python <- function(path_script_python_alignment,path_image_in,path_image_out,M11,M12,M13,M21,M22,M23,M31,M32,M33){
   system(paste("python",path_script_python_alignment, path_image_in, path_image_out, M11 ,M12 ,M13 ,M21 ,M22 ,M23 ,M31 ,M32 ,M33))
-  image_out_rast = rast(path_image_out)
-  image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
+  #image_out_rast = rast(path_image_out)
+  #image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
+  #return(image_out_matrix)
 }
 
 ECC_correction_python <- function(path_script_python_ECC_alignment,path_image_in_1,path_image_in_2,path_image_out){
   system(paste("python", path_script_python_ECC_alignment, path_image_in_1, path_image_in_2, path_image_out))
-  image_out_rast = rast(path_image_out)
-  image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
+  #image_out_rast = rast(path_image_out)
+  #image_out_matrix = t(matrix(image_out_rast,nrow=ext(image_out_rast)[2]))
+  #return(image_out_matrix)
+}
+
+percentage_print <- function(i,n){
+  percentage = (i-1)*100/n
+  percentage_str = formatC(percentage,2,format="d")
+  if(percentage<=100){
+    bar_str = "[==========>]"
+  }
+  if(percentage<=90){
+    bar_str = "[=========> ]"
+  }
+  if(percentage<=80){
+    bar_str = "[========>  ]"
+  }
+  if(percentage<=70){
+    bar_str = "[=======>   ]"
+  }
+  if(percentage<=60){
+    bar_str = "[======>    ]"
+  }
+  if(percentage<=50){
+    bar_str = "[=====>     ]"
+  }
+  if(percentage<=40){
+    bar_str = "[====>      ]"
+  }
+  if(percentage<=30){
+    bar_str = "[===>       ]"
+  }
+  if(percentage<=20){
+    bar_str = "[==>        ]"
+  }
+  if(percentage<=10){
+    bar_str = "[=>         ]"
+  }
+  return(paste(bar_str," - ",percentage_str,"% -",sep = ""))
 }
 
 ##Loop--------------------------------------------------------------------------
 
-for(i in seq(length(path_images_in)/4)){
+n = length(path_images_in)/4
+
+for(i in seq(n)){
+  if(print_percentage_bar_during_loop){
+    cat(percentage_print(i,n),"\r")
+  }
+  
   pattern    = paste("_",formatC(i,3,flag = "0",format="d"),"_",sep="")
   p_in       = path_images_in[which(grepl(pattern,path_images_in))]
   p_out_1    = path_images_out_1[which(grepl(pattern,path_images_out_1))]
