@@ -4,7 +4,7 @@ Augustin Debly
 ## DJI Mavic 3M
 
 ## Packages
-This code is designed in R but it has to use Python functions from opencv library. Another full Python version will be designed later. The packages needed in R are exiftoolr, terra and shiny. The packages needed in Python are numpy and opencv.
+This code is designed in R but it has to use Python functions from opencv library. Another full Python version will be designed later. The packages needed in R are exiftoolr, terra and shiny. The packages needed in Python are numpy and opencv. Make sure you have [Python](https://www.python.org/) installed on your machine.
 
 ```{r}
 #R library
