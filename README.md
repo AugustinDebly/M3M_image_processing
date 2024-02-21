@@ -7,11 +7,6 @@ Augustin Debly
 This code is designed in R but it has to use Python functions from opencv library. Another full Python version will be designed later. The packages needed in R are exiftoolr, terra and shiny. The packages needed in Python are numpy and opencv.
 
 ```{r}
-#| echo: true
-#| warning: false
-#| eval: true
-#| code-fold: true
-
 #R library
 require(exiftoolr)
 require(terra)
