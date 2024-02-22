@@ -113,43 +113,31 @@ $$
 and the distorsion coefficients vector
 
 $$D = \begin{bmatrix}
-  k_1 & k_2 & p_1 & p_2 & k_3 \\
+  k_1 & k_2 & p_1 & p_2 & k_3 & k_4=0 & k_5=0 & k_6=0 \\
 \end{bmatrix}$$
 
 as arguments to correct the image.
 
-$$\begin{bmatrix}
-  x_w \\
-  y_w  \\
-  z_w  \\
-\end{bmatrix}
-$$
+<details>
+<summary>Optical explanations</summary>
 
-$$\begin{bmatrix}
-  x_c \\
-  y_c  \\
-  z_c  \\
-\end{bmatrix}
-$$
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_w\\y_w\\z_w\\\end{bmatrix}">
+</p>
 
-$$\begin{bmatrix}
-  x_c \\
-  y_c  \\
-  z_c  \\
-\end{bmatrix} = P \begin{bmatrix}
-  x_w \\
-  y_w  \\
-  z_w  \\
-  1 \\
-\end{bmatrix}
-$$
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}">
+</p>
 
-$$ P= [R | t] =\begin{bmatrix} 
-R_{11} & R_{12} & R_{13} & t_x \\ 
-R_{21} & R_{22} & R_{23} & t_y \\ 
-R_{31} & R_{32} & R_{33} & t_z \\
-\end{bmatrix}
-$$
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}=P\begin{bmatrix}x_w\\y_w\\z_w\\1\\\end{bmatrix}">
+</p>
+
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;P=[R|t]=\begin{bmatrix}R_{11}&R_{12}&R_{13}&t_x\\R_{21}&R_{22}&R_{23}&t_y\\R_{31}&R_{32}&R_{33}&t_z\\\end{bmatrix}">
+</p>
+
+</details>
 
 $$\begin{bmatrix}
   x_c' \\
@@ -176,6 +164,17 @@ $$\begin{bmatrix}
   x_c'.(1+k_1r^2+k_2r^4+k_3r^6) + 2p_1x_c'y_c' + p_2(r^2+2x_c'^2) \\
   y_c'.(1+k_1r^2+k_2r^4+k_3r^6) + 2p_2x_c'y_c' + p_1(r^2+2y_c'^2)  \\
   1 \\
+\end{bmatrix}
+$$
+
+$$\begin{bmatrix}
+  x_{img} \\
+  y_{img}  \\
+  1  \\
+\end{bmatrix} = K \begin{bmatrix}
+  x_c'' \\
+  y_c''  \\
+  1  \\
 \end{bmatrix}
 $$
 
