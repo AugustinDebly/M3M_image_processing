@@ -67,6 +67,12 @@ y_mat = matrix(rep(1:height,times=width),ncol=width)
 matrice_vignetting = polynomial_correction(x_mat,y_mat,Cx,Cy,c1,c2,c3,c4,c5,c6)
 ```
 
+Check out the matrix values with `plot(rast(matrice_vignetting))` :
+
+<p align="center">
+    <img src="README_images/matrice_vignetting.png" width="50%" alt="Matrix Vignetting Image">
+</p>
+
 * Multiply the raw image by the matrix, previously transformed into SpatRaster :
 
 ```{r}
