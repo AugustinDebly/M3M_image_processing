@@ -18,8 +18,6 @@ system("python -m pip install numpy")
 system("python -m pip install opencv-python")
 ```
 
-## Correction introduction
-
 ## Path definition
 
 ## Geometric processing
@@ -102,6 +100,7 @@ writeRaster(image_corrected_vignetting,path_step_1,datatype = datatype(rast(path
 ```
 
 ### Step 2 : Distorsion correction
+Now you want to correct the distorsion of your images. 
 
 ### Step 3 : Alignment correction
 
