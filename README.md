@@ -100,7 +100,84 @@ writeRaster(image_corrected_vignetting,path_step_1,datatype = datatype(rast(path
 ```
 
 ### Step 2 : Distorsion correction
-Now you want to correct the distorsion of your images. 
+Now you want to correct the distorsion of your images. To do so, the `undistort()` function from opencv in Python is used. It needs the camera matrix
+
+$$K = 
+\begin{bmatrix}
+  f_x & 0 & c_x \\
+  0 & f_y & c_y \\
+  0 & 0 & 1 \\
+\end{bmatrix}
+$$
+
+and the distorsion coefficients vector
+
+$$D = \begin{bmatrix}
+  k_1 & k_2 & p_1 & p_2 & k_3 \\
+\end{bmatrix}$$
+
+as arguments to correct the image.
+
+$$\begin{bmatrix}
+  x_w \\
+  y_w  \\
+  z_w  \\
+\end{bmatrix}
+$$
+
+$$\begin{bmatrix}
+  x_c \\
+  y_c  \\
+  z_c  \\
+\end{bmatrix}
+$$
+
+$$\begin{bmatrix}
+  x_c \\
+  y_c  \\
+  z_c  \\
+\end{bmatrix} = P \begin{bmatrix}
+  x_w \\
+  y_w  \\
+  z_w  \\
+  1 \\
+\end{bmatrix}
+$$
+
+$$ P= [R | t] =\begin{bmatrix} 
+R_{11} & R_{12} & R_{13} & t_x \\ 
+R_{21} & R_{22} & R_{23} & t_y \\ 
+R_{31} & R_{32} & R_{33} & t_z \\
+\end{bmatrix}
+$$
+
+$$\begin{bmatrix}
+  x_c' \\
+  y_c'  \\
+  1  \\
+\end{bmatrix} = \begin{bmatrix}
+  x_c/z_c \\
+  y_c/z_c  \\
+  z_c/z_c  \\
+\end{bmatrix}
+$$
+
+$$r = \sqrt{x_c'^2+y_c'^2}$$
+
+$$\begin{bmatrix}
+  x_c'' \\
+  y_c''  \\
+  1  \\
+\end{bmatrix} = \begin{bmatrix}
+  x_c'.\overbrace{(1+k_1r^2+k_2r^4+k_3r^6)/(1+k_4r^2+k_5r^4+k_6r^6)}^{Radial} + \overbrace{2p_1x_c'y_c'+p_2(r^2+2x_c'^2)}^{Tangential} \\
+  y_c'.(1+k_1r^2+k_2r^4+k_3r^6)/(1+k_4r^2+k_5r^4+k_6r^6) + 2p_2x_c'y_c' + p_1(r^2+2y_c'^2)  \\
+  1 \\
+\end{bmatrix} = \begin{bmatrix}
+  x_c'.(1+k_1r^2+k_2r^4+k_3r^6) + 2p_1x_c'y_c' + p_2(r^2+2x_c'^2) \\
+  y_c'.(1+k_1r^2+k_2r^4+k_3r^6) + 2p_2x_c'y_c' + p_1(r^2+2y_c'^2)  \\
+  1 \\
+\end{bmatrix}
+$$
 
 ### Step 3 : Alignment correction
 
