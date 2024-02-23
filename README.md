@@ -121,13 +121,19 @@ as arguments to correct the image.
 <details>
 <summary>Optical explanations</summary>
 
+The model used here is a [modified pinhole model](https://www.opencv.org.cn/opencvdoc/2.3.2/html/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html?highlight=solvepnp) used by opencv. Let's introduce the coordinates of a given point in the "world" reference system
+
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_w\\y_w\\z_w\\\end{bmatrix}">
 </p>
 
+And in the camera reference system
+
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}">
 </p>
+
+Both are connected through the projection matrix $P$
 
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}=P\begin{bmatrix}x_w\\y_w\\z_w\\1\\\end{bmatrix}">
