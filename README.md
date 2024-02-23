@@ -127,17 +127,19 @@ The model used here is a [modified pinhole model](https://www.opencv.org.cn/open
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_w\\y_w\\z_w\\\end{bmatrix}">
 </p>
 
-And in the camera reference system
+And in the camera reference system, centered and oriented according to the pinhole (in our case, the lens)
 
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}">
 </p>
 
-Both are connected through the projection matrix $P$
+Both are connected through the projection matrix P
 
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}=P\begin{bmatrix}x_w\\y_w\\z_w\\1\\\end{bmatrix}">
 </p>
+
+Which is a combination of a 3x3 rotation matrix and a 3x1 translation vector
 
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;P=[R|t]=\begin{bmatrix}R_{11}&R_{12}&R_{13}&t_x\\R_{21}&R_{22}&R_{23}&t_y\\R_{31}&R_{32}&R_{33}&t_z\\\end{bmatrix}">
