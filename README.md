@@ -137,46 +137,23 @@ as arguments to correct the image.
     <img src="https://latex.codecogs.com/svg.image?\inline&space;P=[R|t]=\begin{bmatrix}R_{11}&R_{12}&R_{13}&t_x\\R_{21}&R_{22}&R_{23}&t_y\\R_{31}&R_{32}&R_{33}&t_z\\\end{bmatrix}">
 </p>
 
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c'\\y_c'\\1\\\end{bmatrix}=\begin{bmatrix}x_c/z_c\\y_c/z_c\\z_c/z_c\\\end{bmatrix}">
+</p>
+
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;r=\sqrt{x_c'^2+y_c'^2}">
+</p>
+
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{align*}\begin{bmatrix}x_c''\\y_c''\\1\\\end{bmatrix}&=\begin{bmatrix}x_c'.\overbrace{(1+k_1r^2+k_2r^4+k_3r^6)/(1+k_4r^2+k_5r^4+k_6r^6)}^{Radial}+\overbrace{2p_1x_c'y_c'+p_2(r^2+2x_c'^2)}^{Tangential}\\y_c'.(1+k_1r^2+k_2r^4+k_3r^6)/(1+k_4r^2+k_5r^4+k_6r^6)+2p_2x_c'y_c'+p_1(r^2+2y_c'^2)\\1\\\end{bmatrix}\\&=\begin{bmatrix}x_c'.(1+k_1r^2+k_2r^4+k_3r^6)+2p_1x_c'y_c'+p_2(r^2+2x_c'^2)\\y_c'.(1+k_1r^2+k_2r^4+k_3r^6)+2p_2x_c'y_c'+p_1(r^2+2y_c'^2)\\1\\\end{bmatrix}\end{align*}">
+</p>
+
+<p align="center">
+    <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_{img}\\y_{img}\\1\\\end{bmatrix}=K\begin{bmatrix}x_c''\\y_c''\\1\\\end{bmatrix}">
+</p>
+
 </details>
-
-$$\begin{bmatrix}
-  x_c' \\
-  y_c'  \\
-  1  \\
-\end{bmatrix} = \begin{bmatrix}
-  x_c/z_c \\
-  y_c/z_c  \\
-  z_c/z_c  \\
-\end{bmatrix}
-$$
-
-$$r = \sqrt{x_c'^2+y_c'^2}$$
-
-$$\begin{bmatrix}
-  x_c'' \\
-  y_c''  \\
-  1  \\
-\end{bmatrix} = \begin{bmatrix}
-  x_c'.\overbrace{(1+k_1r^2+k_2r^4+k_3r^6)/(1+k_4r^2+k_5r^4+k_6r^6)}^{Radial} + \overbrace{2p_1x_c'y_c'+p_2(r^2+2x_c'^2)}^{Tangential} \\
-  y_c'.(1+k_1r^2+k_2r^4+k_3r^6)/(1+k_4r^2+k_5r^4+k_6r^6) + 2p_2x_c'y_c' + p_1(r^2+2y_c'^2)  \\
-  1 \\
-\end{bmatrix} = \begin{bmatrix}
-  x_c'.(1+k_1r^2+k_2r^4+k_3r^6) + 2p_1x_c'y_c' + p_2(r^2+2x_c'^2) \\
-  y_c'.(1+k_1r^2+k_2r^4+k_3r^6) + 2p_2x_c'y_c' + p_1(r^2+2y_c'^2)  \\
-  1 \\
-\end{bmatrix}
-$$
-
-$$\begin{bmatrix}
-  x_{img} \\
-  y_{img}  \\
-  1  \\
-\end{bmatrix} = K \begin{bmatrix}
-  x_c'' \\
-  y_c''  \\
-  1  \\
-\end{bmatrix}
-$$
 
 ### Step 3 : Alignment correction
 
