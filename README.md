@@ -133,7 +133,7 @@ And in the camera reference system, centered and oriented according to the pinho
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}">
 </p>
 
-Both are connected through the projection matrix P
+Both are connected through the 3x4 projection matrix P
 
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c\\y_c\\z_c\\\end{bmatrix}=P\begin{bmatrix}x_w\\y_w\\z_w\\1\\\end{bmatrix}">
@@ -145,9 +145,13 @@ Which is a combination of a 3x3 rotation matrix and a 3x1 translation vector
     <img src="https://latex.codecogs.com/svg.image?\inline&space;P=[R|t]=\begin{bmatrix}R_{11}&R_{12}&R_{13}&t_x\\R_{21}&R_{22}&R_{23}&t_y\\R_{31}&R_{32}&R_{33}&t_z\\\end{bmatrix}">
 </p>
 
+The coordinates are normalized along the optical axis z
+
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;\begin{bmatrix}x_c'\\y_c'\\1\\\end{bmatrix}=\begin{bmatrix}x_c/z_c\\y_c/z_c\\z_c/z_c\\\end{bmatrix}">
 </p>
+
+And the distance r between the point and the center of the lens (in the 2D projection) is defined
 
 <p align="center">
     <img src="https://latex.codecogs.com/svg.image?\inline&space;r=\sqrt{x_c'^2+y_c'^2}">
