@@ -1,13 +1,18 @@
-##Library-----------------------------------------------------------------------
+##Packages----------------------------------------------------------------------
 
-library(exiftoolr)
-library(terra)
+require(exiftoolr)
+require(terra)
+require(shiny)
+require(rearrr)
+#install_exiftool()
+
 system("python -m pip install numpy")
 system("python -m pip install opencv-python")
 
 ##Option(s)---------------------------------------------------------------------
 
 print_percentage_bar_during_loop = TRUE
+rotate_images_according_to_yaw   = TRUE
 
 ##Keep steps stored-------------------------------------------------------------
 #Just for storage, steps will still be processed and temporarily stored even if FALSE
@@ -38,6 +43,9 @@ path_script_python_distorsion    = "distorsion_calibration.py"
 path_script_python_alignment     = "alignment_calibration.py"
 path_script_python_ECC_alignment = "ECC_alignment_calibration.py"
 
+path_coeff_radiance_irradiance   = "calibration_reflectance/coeff_radiance_irradiance.RData"
+load(path_coeff_radiance_irradiance)
+
 name_images                      = list.files(path_in,pattern = ".TIF")
 name_images_NDVI                 = paste(unique(substr(name_images,1,nchar(name_images[1])-9)),".TIF",sep="")
 
@@ -50,6 +58,14 @@ path_images_out_5                = paste(path_out_5,name_images,sep="/")
 path_images_out_6                = paste(path_out_6,name_images,sep="/")
 path_images_out_7                = paste(path_out_7,name_images,sep="/")
 path_images_out_8                = paste(path_out_8,name_images_NDVI,sep="/")
+
+##Variables---------------------------------------------------------------------
+
+FOV_x_deg = 61.2
+FOV_y_deg = 48.1
+
+FOV_x_rad = FOV_x_deg*pi/180
+FOV_y_rad = FOV_y_deg*pi/180
 
 ##Functions---------------------------------------------------------------------
 
@@ -79,8 +95,8 @@ ECC_correction_python <- function(path_script_python_ECC_alignment,path_image_in
   #return(image_out_matrix)
 }
 
-percentage_print <- function(i,n){
-  percentage = (i-1)*100/n
+percentage_print <- function(i,indice_first_image,indice_last_image){
+  percentage = ((i - indice_first_image) * 100) / (indice_last_image - indice_first_image)
   percentage_str = formatC(percentage,2,format="d")
   if(percentage<=100){
     bar_str = "[==========>]"
@@ -112,16 +128,24 @@ percentage_print <- function(i,n){
   if(percentage<=10){
     bar_str = "[=>         ]"
   }
+  if(percentage==0){
+    bar_str = "[>          ]"
+  }
   return(paste(bar_str," - ",percentage_str,"% -",sep = ""))
 }
 
 ##Loop--------------------------------------------------------------------------
 
-n = length(path_images_in)/4
+indice_first_image = as.numeric(strsplit(name_images[1],"_")[[1]][3])
+indice_last_image  = as.numeric(strsplit(name_images[length(name_images)],"_")[[1]][3])
 
-for(i in seq(n)){
+if(indice_first_image==indice_last_image){
+  print_percentage_bar_during_loop = FALSE
+}
+
+for(i in seq(indice_first_image,indice_last_image)){
   if(print_percentage_bar_during_loop){
-    cat(percentage_print(i,n),"\r")
+    cat(percentage_print(i,indice_first_image,indice_last_image),"\r")
   }
   
   pattern    = paste("_",formatC(i,3,flag = "0",format="d"),sep="")
@@ -191,14 +215,69 @@ for(i in seq(n)){
   
   #Parameters-------------------------------------------------------------------
   
-  height_b1 = exif_b1$ImageHeight
-  width_b1  = exif_b1$ImageWidth
-  height_b2 = exif_b2$ImageHeight
-  width_b2  = exif_b2$ImageWidth
-  height_b3 = exif_b3$ImageHeight
-  width_b3  = exif_b3$ImageWidth
-  height_b4 = exif_b4$ImageHeight
-  width_b4  = exif_b4$ImageWidth
+  lon_b1     = exif_b1$GPSLongitude
+  lat_b1     = exif_b1$GPSLatitude
+  lon_b2     = exif_b2$GPSLongitude
+  lat_b2     = exif_b2$GPSLatitude
+  lon_b3     = exif_b3$GPSLongitude
+  lat_b3     = exif_b3$GPSLatitude
+  lon_b4     = exif_b4$GPSLongitude
+  lat_b4     = exif_b4$GPSLatitude
+  
+  alt        = as.numeric(exif_b1$RelativeAltitude)
+  
+  FOV_x_m    = 2*alt*tan(FOV_x_rad/2)
+  FOV_y_m    = 2*alt*tan(FOV_y_rad/2)
+  
+  GPS_b1     = project(vect(cbind(x = lon_b1, y = lat_b1),crs="EPSG:4326"), "EPSG:2154")
+  GPS_b2     = project(vect(cbind(x = lon_b2, y = lat_b2),crs="EPSG:4326"), "EPSG:2154")
+  GPS_b3     = project(vect(cbind(x = lon_b3, y = lat_b3),crs="EPSG:4326"), "EPSG:2154")
+  GPS_b4     = project(vect(cbind(x = lon_b4, y = lat_b4),crs="EPSG:4326"), "EPSG:2154")
+  
+  xmin_b1    = ext(GPS_b1)[1][[1]]-FOV_x_m/2
+  xmax_b1    = ext(GPS_b1)[2][[1]]+FOV_x_m/2
+  ymin_b1    = ext(GPS_b1)[3][[1]]-FOV_y_m/2
+  ymax_b1    = ext(GPS_b1)[4][[1]]+FOV_y_m/2
+  corners_b1 = data.frame(x=c(xmin_b1,xmax_b1,xmin_b1,xmax_b1),y=c(ymin_b1,ymin_b1,ymax_b1,ymax_b1))
+  
+  xmin_b2    = ext(GPS_b2)[1][[1]]-FOV_x_m/2
+  xmax_b2    = ext(GPS_b2)[2][[1]]+FOV_x_m/2
+  ymin_b2    = ext(GPS_b2)[3][[1]]-FOV_y_m/2
+  ymax_b2    = ext(GPS_b2)[4][[1]]+FOV_y_m/2
+  corners_b2 = data.frame(x=c(xmin_b2,xmax_b2,xmin_b2,xmax_b2),y=c(ymin_b2,ymin_b2,ymax_b2,ymax_b2))
+  
+  xmin_b3    = ext(GPS_b3)[1][[1]]-FOV_x_m/2
+  xmax_b3    = ext(GPS_b3)[2][[1]]+FOV_x_m/2
+  ymin_b3    = ext(GPS_b3)[3][[1]]-FOV_y_m/2
+  ymax_b3    = ext(GPS_b3)[4][[1]]+FOV_y_m/2
+  corners_b3 = data.frame(x=c(xmin_b3,xmax_b3,xmin_b3,xmax_b3),y=c(ymin_b3,ymin_b3,ymax_b3,ymax_b3))
+  
+  xmin_b4    = ext(GPS_b4)[1][[1]]-FOV_x_m/2
+  xmax_b4    = ext(GPS_b4)[2][[1]]+FOV_x_m/2
+  ymin_b4    = ext(GPS_b4)[3][[1]]-FOV_y_m/2
+  ymax_b4    = ext(GPS_b4)[4][[1]]+FOV_y_m/2
+  corners_b4 = data.frame(x=c(xmin_b4,xmax_b4,xmin_b4,xmax_b4),y=c(ymin_b4,ymin_b4,ymax_b4,ymax_b4))
+  
+  yaw_b1     = 0
+  yaw_b2     = 0
+  yaw_b3     = 0
+  yaw_b4     = 0
+  
+  if(rotate_images_according_to_yaw){
+    yaw_b1   = as.numeric(exif_b1$FlightYawDegree)
+    yaw_b2   = as.numeric(exif_b2$FlightYawDegree)
+    yaw_b3   = as.numeric(exif_b3$FlightYawDegree)
+    yaw_b4   = as.numeric(exif_b4$FlightYawDegree)
+  }
+  
+  height_b1  = exif_b1$ImageHeight
+  width_b1   = exif_b1$ImageWidth
+  height_b2  = exif_b2$ImageHeight
+  width_b2   = exif_b2$ImageWidth
+  height_b3  = exif_b3$ImageHeight
+  width_b3   = exif_b3$ImageWidth
+  height_b4  = exif_b4$ImageHeight
+  width_b4   = exif_b4$ImageWidth
   
   Cx_b1 = exif_b1$VignettingCenter[[1]][1]
   Cy_b1 = exif_b1$VignettingCenter[[1]][2]
@@ -278,6 +357,20 @@ for(i in seq(n)){
   p1_b4 = distorsion_info_b4[8]
   p2_b4 = distorsion_info_b4[9]
   k3_b4 = distorsion_info_b4[10]
+  
+  # Cx_distorsion_proj_b1 = xmin_b1 + ((Cx_b1+cx_b1)*(xmax_b1-xmin_b1))/width_b1
+  # Cy_distorsion_proj_b1 = ymin_b1 + ((Cy_b1+cy_b1)*(ymax_b1-ymin_b1))/height_b1
+  # Cx_distorsion_proj_b2 = xmin_b2 + ((Cx_b2+cx_b2)*(xmax_b2-xmin_b2))/width_b2
+  # Cy_distorsion_proj_b2 = ymin_b2 + ((Cy_b2+cy_b2)*(ymax_b2-ymin_b2))/height_b2
+  # Cx_distorsion_proj_b3 = xmin_b3 + ((Cx_b3+cx_b3)*(xmax_b3-xmin_b3))/width_b3
+  # Cy_distorsion_proj_b3 = ymin_b3 + ((Cy_b3+cy_b3)*(ymax_b3-ymin_b3))/height_b3
+  # Cx_distorsion_proj_b4 = xmin_b4 + ((Cx_b4+cx_b4)*(xmax_b4-xmin_b4))/width_b4
+  # Cy_distorsion_proj_b4 = ymin_b4 + ((Cy_b4+cy_b4)*(ymax_b4-ymin_b4))/height_b4
+
+  # C_distorsion_df_b1    = data.frame(x=c(Cx_distorsion_proj_b1),y=c(Cy_distorsion_proj_b1))
+  # C_distorsion_df_b2    = data.frame(x=c(Cx_distorsion_proj_b2),y=c(Cy_distorsion_proj_b2))
+  # C_distorsion_df_b3    = data.frame(x=c(Cx_distorsion_proj_b3),y=c(Cy_distorsion_proj_b3))
+  # C_distorsion_df_b4    = data.frame(x=c(Cx_distorsion_proj_b4),y=c(Cy_distorsion_proj_b4))
   
   alignment_info_b1 = as.numeric(strsplit(exif_b1$CalibratedHMatrix,"[;,]")[[1]])
   alignment_info_b2 = as.numeric(strsplit(exif_b2$CalibratedHMatrix,"[;,]")[[1]])
@@ -466,19 +559,93 @@ for(i in seq(n)){
   image_corrected_homogenized_b2 = rast(p_out_4_b2)
   image_corrected_homogenized_b3 = rast(p_out_4_b3)
   image_corrected_homogenized_b4 = rast(p_out_4_b4)
+  
   b1_test = image_corrected_homogenized_b1<min_raw_b1
   b2_test = image_corrected_homogenized_b2<min_raw_b2
   b3_test = image_corrected_homogenized_b3<min_raw_b3
   b4_test = image_corrected_homogenized_b4<min_raw_b4
+  
   all_bands_test = b1_test | b2_test | b3_test | b4_test
+  
   values(image_corrected_homogenized_b1)[which(values(all_bands_test))]=NA
   values(image_corrected_homogenized_b2)[which(values(all_bands_test))]=NA
   values(image_corrected_homogenized_b3)[which(values(all_bands_test))]=NA
   values(image_corrected_homogenized_b4)[which(values(all_bands_test))]=NA
-  writeRaster(image_corrected_homogenized_b1,p_out_5_b1,datatype = datatype(raw_rast_b1),overwrite=T)
-  writeRaster(image_corrected_homogenized_b2,p_out_5_b2,datatype = datatype(raw_rast_b2),overwrite=T)
-  writeRaster(image_corrected_homogenized_b3,p_out_5_b3,datatype = datatype(raw_rast_b3),overwrite=T)
-  writeRaster(image_corrected_homogenized_b4,p_out_5_b4,datatype = datatype(raw_rast_b4),overwrite=T)
+  
+  crs(image_corrected_homogenized_b1) = "EPSG:2154"
+  ext(image_corrected_homogenized_b1) = c(xmin_b1,xmax_b1,ymin_b1,ymax_b1)
+  crs(image_corrected_homogenized_b2) = "EPSG:2154"
+  ext(image_corrected_homogenized_b2) = c(xmin_b1,xmax_b1,ymin_b1,ymax_b1)
+  crs(image_corrected_homogenized_b3) = "EPSG:2154"
+  ext(image_corrected_homogenized_b3) = c(xmin_b1,xmax_b1,ymin_b1,ymax_b1)
+  crs(image_corrected_homogenized_b4) = "EPSG:2154"
+  ext(image_corrected_homogenized_b4) = c(xmin_b1,xmax_b1,ymin_b1,ymax_b1)
+  
+  rotated_extent_df_b1 = as.data.frame(rotate_2d(corners_b1,degrees=-yaw_b1,x_col="x",y_col="y",origin=c((xmax_b1+xmin_b1)/2,(ymax_b1+ymin_b1)/2)))
+  rotated_extent_df_b2 = as.data.frame(rotate_2d(corners_b2,degrees=-yaw_b2,x_col="x",y_col="y",origin=c((xmax_b2+xmin_b2)/2,(ymax_b2+ymin_b2)/2)))
+  rotated_extent_df_b3 = as.data.frame(rotate_2d(corners_b3,degrees=-yaw_b3,x_col="x",y_col="y",origin=c((xmax_b3+xmin_b3)/2,(ymax_b3+ymin_b3)/2)))
+  rotated_extent_df_b4 = as.data.frame(rotate_2d(corners_b4,degrees=-yaw_b4,x_col="x",y_col="y",origin=c((xmax_b4+xmin_b4)/2,(ymax_b4+ymin_b4)/2)))
+  
+  rotated_extent_b1    = c(min(rotated_extent_df_b1$x_rotated),max(rotated_extent_df_b1$x_rotated),min(rotated_extent_df_b1$y_rotated),max(rotated_extent_df_b1$y_rotated))
+  rotated_extent_b2    = c(min(rotated_extent_df_b2$x_rotated),max(rotated_extent_df_b2$x_rotated),min(rotated_extent_df_b2$y_rotated),max(rotated_extent_df_b2$y_rotated))
+  rotated_extent_b3    = c(min(rotated_extent_df_b3$x_rotated),max(rotated_extent_df_b3$x_rotated),min(rotated_extent_df_b3$y_rotated),max(rotated_extent_df_b3$y_rotated))
+  rotated_extent_b4    = c(min(rotated_extent_df_b4$x_rotated),max(rotated_extent_df_b4$x_rotated),min(rotated_extent_df_b4$y_rotated),max(rotated_extent_df_b4$y_rotated))
+  
+  rotated_image_df_b1  = as.data.frame(rotate_2d(as.data.frame(image_corrected_homogenized_b1,xy=T),degrees = -yaw_b1,x_col = "x",y_col = "y",origin = c((xmax_b1+xmin_b1)/2,(ymax_b1+ymin_b1)/2)))
+  rotated_image_df_b1  = data.frame(x=rotated_image_df_b1[,4],y=rotated_image_df_b1[,5],values=rotated_image_df_b1[,3])
+  rotated_image_df_b2  = as.data.frame(rotate_2d(as.data.frame(image_corrected_homogenized_b2,xy=T),degrees = -yaw_b2,x_col = "x",y_col = "y",origin = c((xmax_b1+xmin_b1)/2,(ymax_b1+ymin_b1)/2)))
+  rotated_image_df_b2  = data.frame(x=rotated_image_df_b2[,4],y=rotated_image_df_b2[,5],values=rotated_image_df_b2[,3])
+  rotated_image_df_b3  = as.data.frame(rotate_2d(as.data.frame(image_corrected_homogenized_b3,xy=T),degrees = -yaw_b3,x_col = "x",y_col = "y",origin = c((xmax_b1+xmin_b1)/2,(ymax_b1+ymin_b1)/2)))
+  rotated_image_df_b3  = data.frame(x=rotated_image_df_b3[,4],y=rotated_image_df_b3[,5],values=rotated_image_df_b3[,3])
+  rotated_image_df_b4  = as.data.frame(rotate_2d(as.data.frame(image_corrected_homogenized_b4,xy=T),degrees = -yaw_b4,x_col = "x",y_col = "y",origin = c((xmax_b1+xmin_b1)/2,(ymax_b1+ymin_b1)/2)))
+  rotated_image_df_b4  = data.frame(x=rotated_image_df_b4[,4],y=rotated_image_df_b4[,5],values=rotated_image_df_b4[,3])
+  
+  # Cx_distorsion_proj_rotated_b1   = as.data.frame(rotate_2d(C_distorsion_df_b1,degrees = -yaw_b1,x_col = "x",y_col = "y",origin = c((xmax_b1+xmin_b1)/2,(ymax_b1+ymin_b1)/2)))[,3]
+  # Cy_distorsion_proj_rotated_b1   = as.data.frame(rotate_2d(C_distorsion_df_b1,degrees = -yaw_b1,x_col = "x",y_col = "y",origin = c((xmax_b1+xmin_b1)/2,(ymax_b1+ymin_b1)/2)))[,4]
+  # Cx_distorsion_proj_rotated_b2   = as.data.frame(rotate_2d(C_distorsion_df_b2,degrees = -yaw_b2,x_col = "x",y_col = "y",origin = c((xmax_b2+xmin_b2)/2,(ymax_b2+ymin_b2)/2)))[,3]
+  # Cy_distorsion_proj_rotated_b2   = as.data.frame(rotate_2d(C_distorsion_df_b2,degrees = -yaw_b2,x_col = "x",y_col = "y",origin = c((xmax_b2+xmin_b2)/2,(ymax_b2+ymin_b2)/2)))[,4]
+  # Cx_distorsion_proj_rotated_b3   = as.data.frame(rotate_2d(C_distorsion_df_b3,degrees = -yaw_b3,x_col = "x",y_col = "y",origin = c((xmax_b3+xmin_b3)/2,(ymax_b3+ymin_b3)/2)))[,3]
+  # Cy_distorsion_proj_rotated_b3   = as.data.frame(rotate_2d(C_distorsion_df_b3,degrees = -yaw_b3,x_col = "x",y_col = "y",origin = c((xmax_b3+xmin_b3)/2,(ymax_b3+ymin_b3)/2)))[,4]
+  # Cx_distorsion_proj_rotated_b4   = as.data.frame(rotate_2d(C_distorsion_df_b4,degrees = -yaw_b4,x_col = "x",y_col = "y",origin = c((xmax_b4+xmin_b4)/2,(ymax_b4+ymin_b4)/2)))[,3]
+  # Cy_distorsion_proj_rotated_b4   = as.data.frame(rotate_2d(C_distorsion_df_b4,degrees = -yaw_b4,x_col = "x",y_col = "y",origin = c((xmax_b4+xmin_b4)/2,(ymax_b4+ymin_b4)/2)))[,4]
+  
+  rotated_b1      = rast()
+  ext(rotated_b1) = rotated_extent_b1
+  res(rotated_b1) = res(image_corrected_homogenized_b1)
+  crs(rotated_b1) = crs(image_corrected_homogenized_b1)
+  rotated_b1      = rasterize(as.matrix(rotated_image_df_b1)[,1:2],rotated_b1,values=as.matrix(rotated_image_df_b1)[,3],fun="mean")
+  
+  rotated_b2      = rast()
+  ext(rotated_b2) = rotated_extent_b1
+  res(rotated_b2) = res(image_corrected_homogenized_b1)
+  crs(rotated_b2) = crs(image_corrected_homogenized_b1)
+  rotated_b2      = rasterize(as.matrix(rotated_image_df_b2)[,1:2],rotated_b2,values=as.matrix(rotated_image_df_b2)[,3],fun="mean")
+  
+  rotated_b3      = rast()
+  ext(rotated_b3) = rotated_extent_b1
+  res(rotated_b3) = res(image_corrected_homogenized_b1)
+  crs(rotated_b3) = crs(image_corrected_homogenized_b1)
+  rotated_b3      = rasterize(as.matrix(rotated_image_df_b3)[,1:2],rotated_b3,values=as.matrix(rotated_image_df_b3)[,3],fun="mean")
+  
+  rotated_b4      = rast()
+  ext(rotated_b4) = rotated_extent_b1
+  res(rotated_b4) = res(image_corrected_homogenized_b1)
+  crs(rotated_b4) = crs(image_corrected_homogenized_b1)
+  rotated_b4      = rasterize(as.matrix(rotated_image_df_b4)[,1:2],rotated_b4,values=as.matrix(rotated_image_df_b4)[,3],fun="mean")
+  
+  res_x_b1 = res(rotated_b1)[1]
+  res_y_b1 = res(rotated_b1)[2]
+  res_x_b2 = res(rotated_b2)[1]
+  res_y_b2 = res(rotated_b2)[2]
+  res_x_b3 = res(rotated_b3)[1]
+  res_y_b3 = res(rotated_b3)[2]
+  res_x_b4 = res(rotated_b4)[1]
+  res_y_b4 = res(rotated_b4)[2]
+  
+  writeRaster(rotated_b1,p_out_5_b1,datatype = datatype(raw_rast_b1),overwrite=T)
+  writeRaster(rotated_b2,p_out_5_b2,datatype = datatype(raw_rast_b2),overwrite=T)
+  writeRaster(rotated_b3,p_out_5_b3,datatype = datatype(raw_rast_b3),overwrite=T)
+  writeRaster(rotated_b4,p_out_5_b4,datatype = datatype(raw_rast_b4),overwrite=T)
   
   if(!keep_step_4_ECC_alignment){
     file.remove(p_out_4_b1)
@@ -543,15 +710,20 @@ for(i in seq(n)){
   #image_reflectance_b3 = 0.832277534*image_radiance_b3/mean(values(image_radiance_b3_spectralon),na.rm=T)
   #image_reflectance_b4 = 0.828049362*image_radiance_b4/mean(values(image_radiance_b4_spectralon),na.rm=T)
   
-  coeff_b1 = 0.02753871
-  coeff_b2 = 0.06791631
-  coeff_b3 = 0.03104619
-  coeff_b4 = 0.03678175
+  #coeff_b1 = 0.02753871
+  #coeff_b2 = 0.06791631
+  #coeff_b3 = 0.03104619
+  #coeff_b4 = 0.03678175
   
-  image_reflectance_b1 = image_radiance_b1/(coeff_b1*radiance_down_b1)
-  image_reflectance_b2 = image_radiance_b2/(coeff_b2*radiance_down_b2)
-  image_reflectance_b3 = image_radiance_b3/(coeff_b3*radiance_down_b3)
-  image_reflectance_b4 = image_radiance_b4/(coeff_b4*radiance_down_b4)
+  #image_reflectance_b1 = image_radiance_b1/(coeff_b1*radiance_down_b1)
+  #image_reflectance_b2 = image_radiance_b2/(coeff_b2*radiance_down_b2)
+  #image_reflectance_b3 = image_radiance_b3/(coeff_b3*radiance_down_b3)
+  #image_reflectance_b4 = image_radiance_b4/(coeff_b4*radiance_down_b4)
+  
+  image_reflectance_b1 = image_radiance_b1/(a_radiance_G*radiance_down_b1+b_radiance_G)
+  image_reflectance_b2 = image_radiance_b2/(a_radiance_NIR*radiance_down_b2+b_radiance_NIR)
+  image_reflectance_b3 = image_radiance_b3/(a_radiance_R*radiance_down_b3+b_radiance_R)
+  image_reflectance_b4 = image_radiance_b4/(a_radiance_RE*radiance_down_b4+b_radiance_RE)
   
   #image_reflectance_b1 = rast(p_out_6_b1)*sensor_Gain_adjustment_b1/radiance_down_b1
   #image_reflectance_b2 = rast(p_out_6_b2)*sensor_Gain_adjustment_b2/radiance_down_b2

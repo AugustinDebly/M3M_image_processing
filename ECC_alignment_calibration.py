@@ -9,6 +9,7 @@ import numpy as np
 path_in_1  = sys.argv[1]
 path_in_2  = sys.argv[2]
 path_out   = sys.argv[3]
+path_cc    = "step_4_ECC_alignment/cc_values.txt"
 
 img2TIF  = cv2.imread(path_in_2,cv2.IMREAD_UNCHANGED)
 img1     = cv2.imread(path_in_1)
@@ -27,3 +28,7 @@ criteria             = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_
 img2_corr         = cv2.warpAffine(img2TIF, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
 
 cv2.imwrite(path_out, img2_corr)
+
+fichier_cc = open(path_cc,"a")
+fichier_cc.write(path_out+"\t"+str(cc)+"\n")
+fichier_cc.close()
